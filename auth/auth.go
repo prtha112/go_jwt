@@ -12,9 +12,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type Login struct {
+	Username string `json:"jwt_username"`
+	Password string `json:"jwt_password"`
+}
+
 func LoginHandler(c *gin.Context) {
 	// implement login logic here
-	var signature string
+	var login Login
+	var signature, username, password string
 	var token *jwt.Token
 	var err error
 
@@ -26,6 +32,21 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	signature = os.Getenv("JWT_SIGNATURE")
+	username = os.Getenv("JWT_AUTH_USER")
+	password = os.Getenv("JWT_AUTH_PASS")
+
+	if err := c.BindJSON(&login); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	if username != login.Username || password != login.Password {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Auth user not allow.",
+		})
+		return
+	}
+
 	token = jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
 		ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
 	})
