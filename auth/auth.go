@@ -1,57 +1,50 @@
 package auth
 
 import (
-	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 type Login struct {
-	Username string `json:"jwt_username"`
-	Password string `json:"jwt_password"`
+	Jwtusername string `json:"jwt_username"`
+	Jwtpassword string `json:"jwt_password"`
 }
 
-func LoginHandler(c *gin.Context) {
+type Env struct {
+	Jwtsignature  string
+	Jwtexpiretime int
+	Apikey        string
+}
+
+func LoginHandler(c *gin.Context, env Env) {
 	// implement login logic here
+	var Apikey string
+	var ExpiresAt time.Time
 	var login Login
-	var signature, username, password string
 	var token *jwt.Token
-	var err error
-
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error getting env, not comming through %v", err)
-	} else {
-		fmt.Println("We are getting the env values")
-	}
-
-	signature = os.Getenv("JWT_SIGNATURE")
-	username = os.Getenv("JWT_AUTH_USER")
-	password = os.Getenv("JWT_AUTH_PASS")
 
 	if err := c.BindJSON(&login); err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	if username != login.Username || password != login.Password {
+	Apikey = c.Request.Header.Get("X-API-Key")
+	if Apikey != env.Apikey {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Auth user not allow.",
 		})
 		return
 	}
 
+	ExpiresAt = time.Now().Add(5 * time.Minute)
 	token = jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
+		ExpiresAt: ExpiresAt.Unix(),
 	})
 
-	ss, err := token.SignedString([]byte(signature))
+	tokenString, err := token.SignedString([]byte(env.Jwtsignature))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -59,6 +52,8 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token": ss,
+		"token":     tokenString,
+		"username":  login.Jwtusername,
+		"expire_at": ExpiresAt,
 	})
 }
