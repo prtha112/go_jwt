@@ -17,5 +17,6 @@ mkdir controllers core middlewares models seeds tests
 ```sh
 go get github.com/gorilla/mux
 go get github.com/jinzhu/gorm
+go get github.com/gin-gonic/gin
 go get github.com/joho/godotenv
 ```

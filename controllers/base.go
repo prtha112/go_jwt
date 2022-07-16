@@ -3,21 +3,20 @@ package controllers
 import (
 	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+
+	"go_jwt/routes"
 
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
 )
 
 type Server struct {
-	DB     *gorm.DB
-	Router *mux.Router
+	DB *gorm.DB
 }
 
 func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, DbName string) {
-
 	var err error
 
 	if Dbdriver == "postgres" {
@@ -30,15 +29,11 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 			fmt.Printf("We are connected to the %s database", Dbdriver)
 		}
 	}
-
-	// server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}) //database migration
-
-	server.Router = mux.NewRouter()
-
-	// server.initializeRoutes()
 }
 
 func (server *Server) Run(addr string) {
 	fmt.Println("Listening to port 8080")
-	log.Fatal(http.ListenAndServe(addr, server.Router))
+	r := gin.Default()
+	routes.Serve(r)
+	r.Run(addr)
 }
