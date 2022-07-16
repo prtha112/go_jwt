@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 
+	"go_jwt/models"
 	"go_jwt/routes"
 
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
@@ -28,6 +29,11 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		} else {
 			fmt.Printf("We are connected to the %s database", Dbdriver)
 		}
+	}
+
+	err = server.DB.Debug().AutoMigrate(&models.Book{}).Error
+	if err != nil {
+		log.Fatalf("cannot migrate table: %v", err)
 	}
 }
 
